@@ -24,6 +24,7 @@
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             overflow: hidden;
+            touch-action: manipulation;
         }
         
         .game-container {
@@ -255,6 +256,69 @@
             width: 100%;
             height: 100%;
             z-index: -1;
+        }
+
+        /* Mobile Controls */
+        .mobile-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: none;
+            justify-content: center;
+            z-index: 100;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            margin: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            backdrop-filter: blur(5px);
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .rotate-btn {
+            background: rgba(255, 215, 0, 0.3);
+        }
+
+        .drop-btn {
+            background: rgba(0, 191, 255, 0.3);
+        }
+
+        .hold-btn {
+            background: rgba(138, 43, 226, 0.3);
+        }
+
+        .pause-btn {
+            background: rgba(220, 20, 60, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: flex;
+            }
+            
+            .controls-info {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -611,6 +675,16 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div class="mobile-controls">
+        <div class="control-btn" id="left-btn">←</div>
+        <div class="control-btn rotate-btn" id="rotate-btn">🔄</div>
+        <div class="control-btn" id="right-btn">→</div>
+        <div class="control-btn drop-btn" id="drop-btn">👇</div>
+        <div class="control-btn hold-btn" id="hold-btn">✋</div>
+        <div class="control-btn pause-btn" id="pause-btn">⏸️</div>
     </div>
 
     <!-- Bootstrap JS -->
@@ -1426,6 +1500,68 @@
                     pauseGame();
                     break;
             }
+        });
+        
+        // Mobile controls event listeners
+        document.getElementById('left-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            if (!checkCollision(gameState.currentPiece, gameState.currentX - 1, gameState.currentY, gameState.board)) {
+                gameState.currentX--;
+                playSound('move');
+            }
+        });
+
+        document.getElementById('right-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            if (!checkCollision(gameState.currentPiece, gameState.currentX + 1, gameState.currentY, gameState.board)) {
+                gameState.currentX++;
+                playSound('move');
+            }
+        });
+
+        document.getElementById('rotate-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            const rotated = rotatePiece(gameState.currentPiece);
+            if (!checkCollision(rotated, gameState.currentX, gameState.currentY, gameState.board)) {
+                gameState.currentPiece = rotated;
+                playSound('rotate');
+            }
+        });
+
+        document.getElementById('drop-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            if (!checkCollision(gameState.currentPiece, gameState.currentX, gameState.currentY + 1, gameState.board)) {
+                gameState.currentY++;
+                gameState.score += 1;
+                updateUI();
+                playSound('drop');
+            }
+        });
+
+        document.getElementById('hold-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            holdPiece();
+        });
+
+        document.getElementById('pause-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState.isPaused) {
+                resumeGame();
+            } else if (gameState.isPlaying) {
+                pauseGame();
+            }
+        });
+
+        // Also add click event listeners for devices that support both
+        ['left-btn', 'right-btn', 'rotate-btn', 'drop-btn', 'hold-btn', 'pause-btn'].forEach(id => {
+            document.getElementById(id).addEventListener('click', (e) => {
+                e.preventDefault();
+            });
         });
         
         // Settings event listeners
