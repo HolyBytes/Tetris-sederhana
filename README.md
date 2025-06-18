@@ -96,7 +96,7 @@
 
 Laporkan bug atau request fitur via:
 - [Issues GitHub](https://github.com/HolyBytes/Tetris-sederhana/issues)
-- Email: adepratama.dev@example.com
+- Email: sppquicksmk@gmail.com
 
 ## 📄 Lisensi
 
