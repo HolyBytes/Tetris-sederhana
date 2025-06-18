@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris 2.0 Beta - by ADE PRATAMA</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tetris-board {
+            width: 300px;
+            height: 600px;
+            border: 3px solid #fff;
+            background: rgba(0, 0, 0, 0.8);
+            position: relative;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+        
+        .tetris-cell {
+            width: 30px;
+            height: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: absolute;
+            transition: all 0.3s ease;
+        }
+        
+        .tetris-piece {
+            position: absolute;
+            transition: all 0.1s ease;
+        }
+        
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .menu-content {
+            max-width: 800px;
+            width: 90%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .btn-game {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-game:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, #FF5252, #26C6DA);
+        }
+        
+        .mode-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .mode-card:hover {
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .game-info {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 200px;
+        }
+        
+        .next-piece {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #fff;
+            background: rgba(0, 0, 0, 0.5);
+            margin: 10px 0;
+            position: relative;
+        }
+        
+        .hold-piece {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #fff;
+            background: rgba(0, 0, 0, 0.5);
+            margin: 10px 0;
+            position: relative;
+        }
+        
+        .controls-info {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        
+        .tetris-colors {
+            --i-piece: #00f0f0;
+            --o-piece: #f0f000;
+            --t-piece: #a000f0;
+            --s-piece: #00f000;
+            --z-piece: #f00000;
+            --j-piece: #0000f0;
+            --l-piece: #f0a000;
+        }
+        
+        .piece-i { background-color: var(--i-piece); }
+        .piece-o { background-color: var(--o-piece); }
+        .piece-t { background-color: var(--t-piece); }
+        .piece-s { background-color: var(--s-piece); }
+        .piece-z { background-color: var(--z-piece); }
+        .piece-j { background-color: var(--j-piece); }
+        .piece-l { background-color: var(--l-piece); }
+        
+        .game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .game-over-content {
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            animation: bounce 0.5s ease-out;
+        }
+        
+        @keyframes bounce {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-float 2s linear infinite;
+        }
+        
+        @keyframes particle-float {
+            0% {
+                opacity: 1;
+                transform: translateY(0px) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) rotate(360deg);
+            }
+        }
+        
+        .settings-panel {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            color: white;
+        }
+        
+        .volume-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .three-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Three.js Background -->
+    <div id="three-container" class="three-bg"></div>
+    
+    <!-- Main Menu -->
+    <div id="main-menu" class="menu-overlay">
+        <div class="menu-content text-center">
+            <h1 class="text-6xl font-bold text-white mb-4 animate-pulse">
+                <i class="fas fa-cube"></i> TETRIS
+            </h1>
+            <p class="text-xl text-white mb-8">Versi 2.0 Beta - by ADE PRATAMA</p>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <button class="btn-game w-100" onclick="showModeSelection()">
+                        <i class="fas fa-play"></i> MULAI
+                    </button>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <button class="btn-game w-100" onclick="showSettings()">
+                        <i class="fas fa-cog"></i> PENGATURAN
+                    </button>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <button class="btn-game w-100" onclick="showHighScore()">
+                        <i class="fas fa-trophy"></i> HIGHSCORE
+                    </button>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <button class="btn-game w-100" onclick="showTutorial()">
+                        <i class="fas fa-question-circle"></i> TUTORIAL
+                    </button>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <button class="btn-game w-100" onclick="showCredits()">
+                        <i class="fas fa-info-circle"></i> TENTANG
+                    </button>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <button class="btn-game w-100" onclick="exitGame()">
+                        <i class="fas fa-times"></i> KELUAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mode Selection -->
+    <div id="mode-selection" class="menu-overlay" style="display: none;">
+        <div class="menu-content">
+            <h2 class="text-4xl font-bold text-white text-center mb-6">Pilih Mode Permainan</h2>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="mode-card" onclick="startGame('classic')">
+                        <h4 class="text-white">🔹 Classic Mode</h4>
+                        <p class="text-gray-200">Mode Tetris standar dengan fitur hold dan next piece</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="mode-card" onclick="startGame('timeattack')">
+                        <h4 class="text-white">🔥 Time Attack</h4>
+                        <p class="text-gray-200">Kumpulkan skor tertinggi dalam waktu terbatas</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="mode-card" onclick="startGame('survival')">
+                        <h4 class="text-white">💀 Survival Mode</h4>
+                        <p class="text-gray-200">Kecepatan tinggi tanpa hold dan preview</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="mode-card" onclick="startGame('zen')">
+                        <h4 class="text-white">⏬ Zen Mode</h4>
+                        <p class="text-gray-200">Bermain santai tanpa game over</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="mode-card" onclick="startGame('puzzle')">
+                        <h4 class="text-white">🧠 Puzzle Mode</h4>
+                        <p class="text-gray-200">Selesaikan teka-teki dengan langkah terbatas</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="mode-card" onclick="startGame('versus')">
+                        <h4 class="text-white">⚔️ Versus Mode</h4>
+                        <p class="text-gray-200">Melawan AI dalam mode kompetitif</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button class="btn-game" onclick="showMainMenu()">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings -->
+    <div id="settings" class="menu-overlay" style="display: none;">
+        <div class="menu-content">
+            <h2 class="text-4xl font-bold text-white text-center mb-6">Pengaturan</h2>
+            
+            <div class="settings-panel">
+                <div class="mb-4">
+                    <h5 class="text-white">🔊 Volume Musik</h5>
+                    <input type="range" class="volume-slider" id="music-volume" min="0" max="100" value="50">
+                    <span id="music-value" class="text-white">50%</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="text-white">🔊 Volume Efek</h5>
+                    <input type="range" class="volume-slider" id="sfx-volume" min="0" max="100" value="70">
+                    <span id="sfx-value" class="text-white">70%</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="text-white">✨ Efek Visual</h5>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="particles" checked>
+                        <label class="form-check-label text-white" for="particles">Partikel</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="animations" checked>
+                        <label class="form-check-label text-white" for="animations">Animasi</label>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="text-white">🎮 Kontrol</h5>
+                    <p class="text-gray-300">
+                        ← → : Gerak kiri/kanan<br>
+                        ↓ : Turun cepat<br>
+                        ↑ : Putar<br>
+                        Spasi : Hard drop<br>
+                        C : Hold piece<br>
+                        P : Pause
+                    </p>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button class="btn-game" onclick="showMainMenu()">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- High Score -->
+    <div id="highscore" class="menu-overlay" style="display: none;">
+        <div class="menu-content">
+            <h2 class="text-4xl font-bold text-white text-center mb-6">🏆 High Score</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="settings-panel">
+                        <h5 class="text-yellow-300">Classic Mode</h5>
+                        <div id="classic-scores" class="text-white">
+                            <p>1. 125,000 pts</p>
+                            <p>2. 98,500 pts</p>
+                            <p>3. 87,200 pts</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="settings-panel">
+                        <h5 class="text-red-300">Time Attack</h5>
+                        <div id="timeattack-scores" class="text-white">
+                            <p>1. 89,300 pts</p>
+                            <p>2. 76,800 pts</p>
+                            <p>3. 65,400 pts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button class="btn-game" onclick="showMainMenu()">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tutorial -->
+    <div id="tutorial" class="menu-overlay" style="display: none;">
+        <div class="menu-content">
+            <h2 class="text-4xl font-bold text-white text-center mb-6">📚 Tutorial</h2>
+            
+            <div class="settings-panel">
+                <h5 class="text-yellow-300">Cara Bermain</h5>
+                <p class="text-white mb-3">
+                    Tetris adalah game puzzle di mana kamu harus menyusun blok-blok (tetromino) 
+                    yang jatuh untuk membentuk garis horizontal penuh.
+                </p>
+                
+                <h5 class="text-yellow-300">Kontrol Dasar</h5>
+                <div class="row text-white">
+                    <div class="col-md-6">
+                        <p><kbd>←</kbd> <kbd>→</kbd> Gerak kiri/kanan</p>
+                        <p><kbd>↓</kbd> Turun cepat</p>
+                        <p><kbd>↑</kbd> Putar piece</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><kbd>Spasi</kbd> Hard drop</p>
+                        <p><kbd>C</kbd> Hold piece</p>
+                        <p><kbd>P</kbd> Pause game</p>
+                    </div>
+                </div>
+                
+                <h5 class="text-yellow-300">Tips Bermain</h5>
+                <ul class="text-white">
+                    <li>Usahakan selalu bersihkan 4 baris sekaligus (Tetris) untuk skor maksimal</li>
+                    <li>Gunakan fitur Hold untuk menyimpan piece yang berguna</li>
+                    <li>Perhatikan preview piece selanjutnya untuk strategi</li>
+                    <li>Jangan biarkan stack terlalu tinggi</li>
+                </ul>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button class="btn-game" onclick="showMainMenu()">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Credits -->
+    <div id="credits" class="menu-overlay" style="display: none;">
+        <div class="menu-content text-center">
+            <h2 class="text-4xl font-bold text-white mb-6">🎮 Tentang Game</h2>
+            
+            <div class="settings-panel">
+                <h3 class="text-yellow-300 mb-4">TETRIS 2.0 BETA</h3>
+                
+                <div class="mb-4">
+                    <h5 class="text-white">👨‍💻 Developer</h5>
+                    <p class="text-gray-300">ADE PRATAMA</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="text-white">🔗 Links</h5>
+                    <p class="text-gray-300">
+                        GitHub: <a href="https://github.com/HolyBytes" class="text-blue-400">https://github.com/HolyBytes</a><br>
+                        Saweria: <a href="https://saweria.co/HolyBytes" class="text-green-400">https://saweria.co/HolyBytes</a>
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="text-white">🛠️ Teknologi yang Digunakan</h5>
+                    <p class="text-gray-300">
+                        HTML5, CSS3, JavaScript<br>
+                        Bootstrap 5, Tailwind CSS<br>
+                        Three.js, Font Awesome
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="text-white">📝 Versi</h5>
+                    <p class="text-gray-300">2.0 Beta</p>
+                </div>
+                
+                <p class="text-sm text-gray-400">
+                    © 2024 ADE PRATAMA. Dibuat dengan ❤️ untuk komunitas gaming Indonesia.
+                </p>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button class="btn-game" onclick="showMainMenu()">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Area -->
+    <div id="game-area" class="game-container" style="display: none;">
+        <div class="controls-info">
+            <h6 class="text-white">🎮 Kontrol</h6>
+            <p class="mb-1">← → : Gerak</p>
+            <p class="mb-1">↓ : Turun</p>
+            <p class="mb-1">↑ : Putar</p>
+            <p class="mb-1">Spasi : Drop</p>
+            <p class="mb-1">C : Hold</p>
+            <p class="mb-1">P : Pause</p>
+            <p class="mb-1">ESC : Menu</p>
+        </div>
+        
+        <div class="tetris-board" id="tetris-board">
+            <!-- Game cells will be generated here -->
+        </div>
+        
+        <div class="game-info">
+            <h6 class="text-white">📊 Info Game</h6>
+            <p class="mb-2">Mode: <span id="current-mode" class="text-yellow-300">Classic</span></p>
+            <p class="mb-2">Skor: <span id="score" class="text-green-300">0</span></p>
+            <p class="mb-2">Level: <span id="level" class="text-blue-300">1</span></p>
+            <p class="mb-2">Baris: <span id="lines" class="text-purple-300">0</span></p>
+            <p class="mb-3">Waktu: <span id="time" class="text-red-300">00:00</span></p>
+            
+            <div id="next-container">
+                <h6 class="text-white">Selanjutnya:</h6>
+                <div class="next-piece" id="next-piece"></div>
+            </div>
+            
+            <div id="hold-container">
+                <h6 class="text-white">Hold:</h6>
+                <div class="hold-piece" id="hold-piece"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Over Overlay -->
+    <div id="game-over" class="game-over-overlay" style="display: none;">
+        <div class="game-over-content">
+            <h2 class="text-4xl font-bold mb-4">🎮 GAME OVER</h2>
+            <p class="text-xl mb-2">Skor Akhir: <span id="final-score">0</span></p>
+            <p class="text-lg mb-4">Level: <span id="final-level">1</span></p>
+            
+            <div class="mt-4">
+                <button class="btn-game me-3" onclick="restartGame()">
+                    <i class="fas fa-redo"></i> Main Lagi
+                </button>
+                <button class="btn-game" onclick="showMainMenu()">
+                    <i class="fas fa-home"></i> Menu Utama
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pause Overlay -->
+    <div id="pause-overlay" class="menu-overlay" style="display: none;">
+        <div class="menu-content text-center">
+            <h2 class="text-4xl font-bold text-white mb-6">⏸️ PAUSE</h2>
+            
+            <div class="mb-4">
+                <button class="btn-game" onclick="resumeGame()">
+                    <i class="fas fa-play"></i> Lanjutkan
+                </button>
+            </div>
+            <div class="mb-4">
+                <button class="btn-game" onclick="restartGame()">
+                    <i class="fas fa-redo"></i> Restart
+                </button>
+            </div>
+            <div class="mb-4">
+                <button class="btn-game" onclick="showMainMenu()">
+                    <i class="fas fa-home"></i> Menu Utama
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Game variables
+        let gameState = {
+            board: [],
+            currentPiece: null,
+            currentX: 0,
+            currentY: 0,
+            nextPiece: null,
+            holdPiece: null,
+            canHold: true,
+            score: 0,
+            level: 1,
+            lines: 0,
+            gameMode: 'classic',
+            isPlaying: false,
+            isPaused: false,
+            dropTime: 0,
+            lastTime: 0,
+            gameTime: 0,
+            settings: {
+                musicVolume: 50,
+                sfxVolume: 70,
+                particles: true,
+                animations: true
+            }
+        };
+        
+        // Tetris pieces
+        const PIECES = {
+            I: [
+                [1, 1, 1, 1]
+            ],
+            O: [
+                [1, 1],
+                [1, 1]
+            ],
+            T: [
+                [0, 1, 0],
+                [1, 1, 1]
+            ],
+            S: [
+                [0, 1, 1],
+                [1, 1, 0]
+            ],
+            Z: [
+                [1, 1, 0],
+                [0, 1, 1]
+            ],
+            J: [
+                [1, 0, 0],
+                [1, 1, 1]
+            ],
+            L: [
+                [0, 0, 1],
+                [1, 1, 1]
+            ]
+        };
+        
+        const PIECE_COLORS = {
+            I: '#00f0f0',
+            O: '#f0f000',
+            T: '#a000f0',
+            S: '#00f000',
+            Z: '#f00000',
+            J: '#0000f0',
+            L: '#f0a000'
+        };
+        
+        // Three.js background
+        let scene, camera, renderer, particles;
+        
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('three-container').appendChild(renderer.domElement);
+            
+            // Create particles
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            
+            for (let i = 0; i < 1000; i++) {
+                positions.push(
+                    (Math.random() - 0.5) * 2000,
+                    (Math.random() - 0.5) * 2000,
+                    (Math.random() - 0.5) * 2000
+                );
+                
+                const color = new THREE.Color();
+                color.setHSL(Math.random(), 0.5, 0.5);
+                colors.push(color.r, color.g, color.b);
+            }
+            
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({
+                size: 5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.6
+            });
+            
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+            
+            camera.position.z = 1000;
+            
+            animate();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            particles.rotation.x += 0.001;
+            particles.rotation.y += 0.002;
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Initialize game board
+        function initBoard() {
+            gameState.board = [];
+            for (let y = 0; y < 20; y++) {
+                gameState.board[y] = [];
+                for (let x = 0; x < 10; x++) {
+                    gameState.board[y][x] = 0;
+                }
+            }
+        }
+        
+        // Create piece
+        function createPiece(type) {
+            const pieces = Object.keys(PIECES);
+            const pieceType = type || pieces[Math.floor(Math.random() * pieces.length)];
+            return {
+                type: pieceType,
+                shape: PIECES[pieceType],
+                color: PIECE_COLORS[pieceType]
+            };
+        }
+        
+        // Draw board
+        function drawBoard() {
+            const board = document.getElementById('tetris-board');
+            board.innerHTML = '';
+            
+            for (let y = 0; y < 20; y++) {
+                for (let x = 0; x < 10; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'tetris-cell';
+                    cell.style.left = x * 30 + 'px';
+                    cell.style.top = y * 30 + 'px';
+                    
+                    if (gameState.board[y][x]) {
+                        cell.style.backgroundColor = gameState.board[y][x];
+                        cell.style.border = '1px solid rgba(255,255,255,0.5)';
+                    }
+                    
+                    board.appendChild(cell);
+                }
+            }
+            
+            // Draw current piece
+            if (gameState.currentPiece) {
+                drawPiece(gameState.currentPiece, gameState.currentX, gameState.currentY);
+            }
+        }
+        
+        // Draw piece
+        function drawPiece(piece, offsetX, offsetY) {
+            const board = document.getElementById('tetris-board');
+            
+            for (let y = 0; y < piece.shape.length; y++) {
+                for (let x = 0; x < piece.shape[y].length; x++) {
+                    if (piece.shape[y][x]) {
+                        const cell = document.createElement('div');
+                        cell.className = 'tetris-cell tetris-piece';
+                        cell.style.left = (offsetX + x) * 30 + 'px';
+                        cell.style.top = (offsetY + y) * 30 + 'px';
+                        cell.style.backgroundColor = piece.color;
+                        cell.style.border = '2px solid rgba(255,255,255,0.8)';
+                        cell.style.boxShadow = '0 0 10px rgba(255,255,255,0.3)';
+                        
+                        board.appendChild(cell);
+                    }
+                }
+            }
+        }
+        
+        // Check collision
+        function checkCollision(piece, offsetX, offsetY, board) {
+            for (let y = 0; y < piece.shape.length; y++) {
+                for (let x = 0; x < piece.shape[y].length; x++) {
+                    if (piece.shape[y][x]) {
+                        const newX = offsetX + x;
+                        const newY = offsetY + y;
+                        
+                        if (newX < 0 || newX >= 10 || newY >= 20) {
+                            return true;
+                        }
+                        
+                        if (newY >= 0 && board[newY][newX]) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        // Rotate piece
+        function rotatePiece(piece) {
+            const rotated = {
+                type: piece.type,
+                color: piece.color,
+                shape: []
+            };
+            
+            const rows = piece.shape.length;
+            const cols = piece.shape[0].length;
+            
+            for (let x = 0; x < cols; x++) {
+                rotated.shape[x] = [];
+                for (let y = rows - 1; y >= 0; y--) {
+                    rotated.shape[x][cols - 1 - y] = piece.shape[y][x];
+                }
+            }
+            
+            return rotated;
+        }
+        
+        // Place piece on board
+        function placePiece() {
+            for (let y = 0; y < gameState.currentPiece.shape.length; y++) {
+                for (let x = 0; x < gameState.currentPiece.shape[y].length; x++) {
+                    if (gameState.currentPiece.shape[y][x]) {
+                        const boardY = gameState.currentY + y;
+                        const boardX = gameState.currentX + x;
+                        
+                        if (boardY >= 0) {
+                            gameState.board[boardY][boardX] = gameState.currentPiece.color;
+                        }
+                    }
+                }
+            }
+            
+            // Check for completed lines
+            checkLines();
+            
+            // Spawn new piece
+            spawnPiece();
+            
+            // Check game over
+            if (checkCollision(gameState.currentPiece, gameState.currentX, gameState.currentY, gameState.board)) {
+                gameOver();
+            }
+        }
+        
+        // Check and clear completed lines
+        function checkLines() {
+            let linesCleared = 0;
+            
+            for (let y = gameState.board.length - 1; y >= 0; y--) {
+                if (gameState.board[y].every(cell => cell !== 0)) {
+                    // Line is complete
+                    gameState.board.splice(y, 1);
+                    gameState.board.unshift(new Array(10).fill(0));
+                    linesCleared++;
+                    y++; // Check the same line again
+                    
+                    // Add particle effects
+                    if (gameState.settings.particles) {
+                        createLineParticles(y);
+                    }
+                }
+            }
+            
+            if (linesCleared > 0) {
+                // Update score
+                const points = [0, 40, 100, 300, 1200];
+                gameState.score += points[linesCleared] * (gameState.level + 1);
+                gameState.lines += linesCleared;
+                
+                // Level up every 10 lines
+                if (Math.floor(gameState.lines / 10) > gameState.level - 1) {
+                    gameState.level++;
+                    playSound('levelup');
+                }
+                
+                updateUI();
+                playSound('lineclear');
+            }
+        }
+        
+        // Create particle effects
+        function createLineParticles(y) {
+            const board = document.getElementById('tetris-board');
+            
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 300 + 'px';
+                particle.style.top = y * 30 + 'px';
+                particle.style.background = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                
+                board.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 2000);
+            }
+        }
+        
+        // Spawn new piece
+        function spawnPiece() {
+            gameState.currentPiece = gameState.nextPiece || createPiece();
+            gameState.nextPiece = createPiece();
+            gameState.currentX = Math.floor((10 - gameState.currentPiece.shape[0].length) / 2);
+            gameState.currentY = 0;
+            gameState.canHold = true;
+            
+            drawNextPiece();
+        }
+        
+        // Draw next piece
+        function drawNextPiece() {
+            const nextContainer = document.getElementById('next-piece');
+            if (!nextContainer || !gameState.nextPiece) return;
+            
+            nextContainer.innerHTML = '';
+            
+            const piece = gameState.nextPiece;
+            for (let y = 0; y < piece.shape.length; y++) {
+                for (let x = 0; x < piece.shape[y].length; x++) {
+                    if (piece.shape[y][x]) {
+                        const cell = document.createElement('div');
+                        cell.style.position = 'absolute';
+                        cell.style.width = '20px';
+                        cell.style.height = '20px';
+                        cell.style.left = x * 22 + 10 + 'px';
+                        cell.style.top = y * 22 + 10 + 'px';
+                        cell.style.backgroundColor = piece.color;
+                        cell.style.border = '1px solid rgba(255,255,255,0.5)';
+                        
+                        nextContainer.appendChild(cell);
+                    }
+                }
+            }
+        }
+        
+        // Draw hold piece
+        function drawHoldPiece() {
+            const holdContainer = document.getElementById('hold-piece');
+            if (!holdContainer) return;
+            
+            holdContainer.innerHTML = '';
+            
+            if (gameState.holdPiece) {
+                const piece = gameState.holdPiece;
+                for (let y = 0; y < piece.shape.length; y++) {
+                    for (let x = 0; x < piece.shape[y].length; x++) {
+                        if (piece.shape[y][x]) {
+                            const cell = document.createElement('div');
+                            cell.style.position = 'absolute';
+                            cell.style.width = '20px';
+                            cell.style.height = '20px';
+                            cell.style.left = x * 22 + 10 + 'px';
+                            cell.style.top = y * 22 + 10 + 'px';
+                            cell.style.backgroundColor = piece.color;
+                            cell.style.border = '1px solid rgba(255,255,255,0.5)';
+                            cell.style.opacity = gameState.canHold ? '1' : '0.5';
+                            
+                            holdContainer.appendChild(cell);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Hold piece function
+        function holdPiece() {
+            if (!gameState.canHold || gameState.gameMode === 'survival') return;
+            
+            if (gameState.holdPiece) {
+                // Swap current and hold pieces
+                const temp = gameState.currentPiece;
+                gameState.currentPiece = gameState.holdPiece;
+                gameState.holdPiece = temp;
+            } else {
+                // Put current piece in hold, spawn new piece
+                gameState.holdPiece = gameState.currentPiece;
+                gameState.currentPiece = gameState.nextPiece;
+                gameState.nextPiece = createPiece();
+                drawNextPiece();
+            }
+            
+            // Reset position
+            gameState.currentX = Math.floor((10 - gameState.currentPiece.shape[0].length) / 2);
+            gameState.currentY = 0;
+            gameState.canHold = false;
+            
+            drawHoldPiece();
+            playSound('hold');
+        }
+        
+        // Game loop
+        function gameLoop(time) {
+            if (!gameState.isPlaying || gameState.isPaused) {
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            
+            const deltaTime = time - gameState.lastTime;
+            gameState.lastTime = time;
+            gameState.gameTime += deltaTime;
+            
+            // Update drop timer
+            const dropInterval = Math.max(50, 1000 - (gameState.level - 1) * 50);
+            gameState.dropTime += deltaTime;
+            
+            if (gameState.dropTime > dropInterval) {
+                dropPiece();
+                gameState.dropTime = 0;
+            }
+            
+            // Update time display
+            updateTimeDisplay();
+            
+            // Time Attack mode timer
+            if (gameState.gameMode === 'timeattack') {
+                const timeLimit = 2 * 60 * 1000; // 2 minutes
+                if (gameState.gameTime >= timeLimit) {
+                    gameOver();
+                }
+            }
+            
+            drawBoard();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Drop piece
+        function dropPiece() {
+            if (!checkCollision(gameState.currentPiece, gameState.currentX, gameState.currentY + 1, gameState.board)) {
+                gameState.currentY++;
+            } else {
+                placePiece();
+            }
+        }
+        
+        // Hard drop
+        function hardDrop() {
+            while (!checkCollision(gameState.currentPiece, gameState.currentX, gameState.currentY + 1, gameState.board)) {
+                gameState.currentY++;
+                gameState.score += 2; // Bonus points for hard drop
+            }
+            placePiece();
+            playSound('harddrop');
+        }
+        
+        // Update UI
+        function updateUI() {
+            document.getElementById('score').textContent = gameState.score.toLocaleString();
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('lines').textContent = gameState.lines;
+            document.getElementById('current-mode').textContent = getModeDisplayName(gameState.gameMode);
+        }
+        
+        // Update time display
+        function updateTimeDisplay() {
+            const minutes = Math.floor(gameState.gameTime / 60000);
+            const seconds = Math.floor((gameState.gameTime % 60000) / 1000);
+            document.getElementById('time').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Get mode display name
+        function getModeDisplayName(mode) {
+            const names = {
+                classic: 'Classic',
+                timeattack: 'Time Attack',
+                survival: 'Survival',
+                zen: 'Zen',
+                puzzle: 'Puzzle',
+                versus: 'Versus'
+            };
+            return names[mode] || 'Classic';
+        }
+        
+        // Play sound effect
+        function playSound(type) {
+            // Create audio context for sound effects
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                const volume = gameState.settings.sfxVolume / 100 * 0.1;
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                
+                let frequency = 440;
+                let duration = 0.1;
+                
+                switch (type) {
+                    case 'move':
+                        frequency = 220;
+                        duration = 0.05;
+                        break;
+                    case 'rotate':
+                        frequency = 330;
+                        duration = 0.08;
+                        break;
+                    case 'drop':
+                        frequency = 165;
+                        duration = 0.1;
+                        break;
+                    case 'harddrop':
+                        frequency = 110;
+                        duration = 0.2;
+                        break;
+                    case 'lineclear':
+                        frequency = 660;
+                        duration = 0.3;
+                        break;
+                    case 'levelup':
+                        frequency = 880;
+                        duration = 0.5;
+                        break;
+                    case 'hold':
+                        frequency = 440;
+                        duration = 0.15;
+                        break;
+                    case 'gameover':
+                        frequency = 220;
+                        duration = 1.0;
+                        break;
+                }
+                
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        // Game over
+        function gameOver() {
+            gameState.isPlaying = false;
+            playSound('gameover');
+            
+            document.getElementById('final-score').textContent = gameState.score.toLocaleString();
+            document.getElementById('final-level').textContent = gameState.level;
+            
+            // Save high score
+            saveHighScore();
+            
+            setTimeout(() => {
+                document.getElementById('game-over').style.display = 'flex';
+            }, 1000);
+        }
+        
+        // Save high score
+        function saveHighScore() {
+            const scores = JSON.parse(localStorage.getItem('tetris-scores') || '{}');
+            const mode = gameState.gameMode;
+            
+            if (!scores[mode]) {
+                scores[mode] = [];
+            }
+            
+            scores[mode].push({
+                score: gameState.score,
+                level: gameState.level,
+                lines: gameState.lines,
+                date: new Date().toISOString()
+            });
+            
+            // Keep only top 10 scores
+            scores[mode].sort((a, b) => b.score - a.score);
+            scores[mode] = scores[mode].slice(0, 10);
+            
+            localStorage.setItem('tetris-scores', JSON.stringify(scores));
+        }
+        
+        // Load high scores
+        function loadHighScores() {
+            const scores = JSON.parse(localStorage.getItem('tetris-scores') || '{}');
+            
+            // Update classic scores
+            const classicContainer = document.getElementById('classic-scores');
+            if (classicContainer && scores.classic) {
+                classicContainer.innerHTML = scores.classic
+                    .slice(0, 3)
+                    .map((score, index) => `<p>${index + 1}. ${score.score.toLocaleString()} pts</p>`)
+                    .join('');
+            }
+            
+            // Update time attack scores
+            const timeattackContainer = document.getElementById('timeattack-scores');
+            if (timeattackContainer && scores.timeattack) {
+                timeattackContainer.innerHTML = scores.timeattack
+                    .slice(0, 3)
+                    .map((score, index) => `<p>${index + 1}. ${score.score.toLocaleString()} pts</p>`)
+                    .join('');
+            }
+        }
+        
+        // Menu functions
+        function showMainMenu() {
+            document.getElementById('main-menu').style.display = 'flex';
+            document.getElementById('mode-selection').style.display = 'none';
+            document.getElementById('settings').style.display = 'none';
+            document.getElementById('highscore').style.display = 'none';
+            document.getElementById('tutorial').style.display = 'none';
+            document.getElementById('credits').style.display = 'none';
+            document.getElementById('game-area').style.display = 'none';
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('pause-overlay').style.display = 'none';
+            
+            gameState.isPlaying = false;
+            gameState.isPaused = false;
+        }
+        
+        function showModeSelection() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('mode-selection').style.display = 'flex';
+        }
+        
+        function showSettings() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('settings').style.display = 'flex';
+            
+            // Update sliders
+            document.getElementById('music-volume').value = gameState.settings.musicVolume;
+            document.getElementById('sfx-volume').value = gameState.settings.sfxVolume;
+            document.getElementById('music-value').textContent = gameState.settings.musicVolume + '%';
+            document.getElementById('sfx-value').textContent = gameState.settings.sfxVolume + '%';
+            document.getElementById('particles').checked = gameState.settings.particles;
+            document.getElementById('animations').checked = gameState.settings.animations;
+        }
+        
+        function showHighScore() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('highscore').style.display = 'flex';
+            loadHighScores();
+        }
+        
+        function showTutorial() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('tutorial').style.display = 'flex';
+        }
+        
+        function showCredits() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('credits').style.display = 'flex';
+        }
+        
+        function exitGame() {
+            if (confirm('Yakin ingin keluar dari game?')) {
+                window.close();
+            }
+        }
+        
+        // Start game
+        function startGame(mode) {
+            gameState.gameMode = mode;
+            gameState.isPlaying = true;
+            gameState.isPaused = false;
+            gameState.score = 0;
+            gameState.level = 1;
+            gameState.lines = 0;
+            gameState.gameTime = 0;
+            gameState.dropTime = 0;
+            gameState.canHold = true;
+            gameState.holdPiece = null;
+            
+            // Mode-specific settings
+            switch (mode) {
+                case 'survival':
+                    gameState.level = 10; // Start at high level
+                    break;
+                case 'zen':
+                    gameState.level = 1;
+                    break;
+                case 'timeattack':
+                    gameState.level = 1;
+                    break;
+            }
+            
+            // Hide mode selection, show game
+            document.getElementById('mode-selection').style.display = 'none';
+            document.getElementById('game-area').style.display = 'flex';
+            
+            // Initialize game
+            initBoard();
+            spawnPiece();
+            updateUI();
+            drawNextPiece();
+            drawHoldPiece();
+            
+            // Update UI visibility based on mode
+            const nextContainer = document.getElementById('next-container');
+            const holdContainer = document.getElementById('hold-container');
+            
+            if (mode === 'survival') {
+                nextContainer.style.display = 'none';
+                holdContainer.style.display = 'none';
+            } else {
+                nextContainer.style.display = 'block';
+                holdContainer.style.display = 'block';
+            }
+            
+            gameState.lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Restart game
+        function restartGame() {
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('pause-overlay').style.display = 'none';
+            startGame(gameState.gameMode);
+        }
+        
+        // Pause/Resume game
+        function pauseGame() {
+            if (!gameState.isPlaying) return;
+            
+            gameState.isPaused = true;
+            document.getElementById('pause-overlay').style.display = 'flex';
+        }
+        
+        function resumeGame() {
+            gameState.isPaused = false;
+            document.getElementById('pause-overlay').style.display = 'none';
+            gameState.lastTime = performance.now();
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.isPlaying || gameState.isPaused) {
+                if (e.code === 'KeyP') {
+                    resumeGame();
+                }
+                return;
+            }
+            
+            switch (e.code) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    if (!checkCollision(gameState.currentPiece, gameState.currentX - 1, gameState.currentY, gameState.board)) {
+                        gameState.currentX--;
+                        playSound('move');
+                    }
+                    break;
+                    
+                case 'ArrowRight':
+                    e.preventDefault();
+                    if (!checkCollision(gameState.currentPiece, gameState.currentX + 1, gameState.currentY, gameState.board)) {
+                        gameState.currentX++;
+                        playSound('move');
+                    }
+                    break;
+                    
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (!checkCollision(gameState.currentPiece, gameState.currentX, gameState.currentY + 1, gameState.board)) {
+                        gameState.currentY++;
+                        gameState.score += 1;
+                        updateUI();
+                        playSound('drop');
+                    }
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    const rotated = rotatePiece(gameState.currentPiece);
+                    if (!checkCollision(rotated, gameState.currentX, gameState.currentY, gameState.board)) {
+                        gameState.currentPiece = rotated;
+                        playSound('rotate');
+                    }
+                    break;
+                    
+                case 'Space':
+                    e.preventDefault();
+                    hardDrop();
+                    break;
+                    
+                case 'KeyC':
+                    e.preventDefault();
+                    holdPiece();
+                    break;
+                    
+                case 'KeyP':
+                    e.preventDefault();
+                    pauseGame();
+                    break;
+                    
+                case 'Escape':
+                    e.preventDefault();
+                    pauseGame();
+                    break;
+            }
+        });
+        
+        // Settings event listeners
+        document.getElementById('music-volume').addEventListener('input', (e) => {
+            gameState.settings.musicVolume = parseInt(e.target.value);
+            document.getElementById('music-value').textContent = e.target.value + '%';
+        });
+        
+        document.getElementById('sfx-volume').addEventListener('input', (e) => {
+            gameState.settings.sfxVolume = parseInt(e.target.value);
+            document.getElementById('sfx-value').textContent = e.target.value + '%';
+        });
+        
+        document.getElementById('particles').addEventListener('change', (e) => {
+            gameState.settings.particles = e.target.checked;
+        });
+        
+        document.getElementById('animations').addEventListener('change', (e) => {
+            gameState.settings.animations = e.target.checked;
+        });
+        
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            if (renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initThreeJS();
+            loadHighScores();
+            
+            // Show main menu
+            showMainMenu();
+        });
+    </script>
+</body>
+</html>
